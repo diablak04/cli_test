@@ -31,13 +31,18 @@
             <p class="app-subtitle">Track, filter, and compose social announcements for the latest BigQuery features, deprecations, and service updates.</p>
             
             <div class="meta-controls">
+                <button class="btn btn-icon" id="theme-toggle-btn" title="Przełącz motyw jasny/ciemny"></button>
                 <div class="status-badge">
                     <span class="status-dot" id="status-dot"></span>
                     <span id="status-text">Checking feed...</span>
                 </div>
                 <button class="btn" id="refresh-btn">
                     <span id="refresh-btn-icon"></span>
-                    <span id="refresh-btn-text">Refresh Feed</span>
+                    <span id="refresh-btn-text">Odśwież feed</span>
+                </button>
+                <button class="btn" id="export-csv-btn" title="Eksportuj widoczne aktualizacje do pliku CSV">
+                    <span id="export-csv-btn-icon"></span>
+                    <span>Eksportuj CSV</span>
                 </button>
             </div>
         </header>

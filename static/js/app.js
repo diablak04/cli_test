@@ -10,7 +10,10 @@ const ICONS = {
     close: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
     info: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`,
     success: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
-    alert: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+    alert: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+    sun: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
+    moon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
+    export: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`
 };
 
 // Application State
@@ -27,6 +30,9 @@ const DOM = {
     refreshBtn: document.getElementById('refresh-btn'),
     refreshBtnText: document.getElementById('refresh-btn-text'),
     refreshBtnIcon: document.getElementById('refresh-btn-icon'),
+    themeToggleBtn: document.getElementById('theme-toggle-btn'),
+    exportCsvBtn: document.getElementById('export-csv-btn'),
+    exportCsvBtnIcon: document.getElementById('export-csv-btn-icon'),
     statusText: document.getElementById('status-text'),
     statusDot: document.getElementById('status-dot'),
     searchInput: document.getElementById('search-input'),
@@ -51,12 +57,24 @@ const DOM = {
 document.addEventListener('DOMContentLoaded', () => {
     // Populate simple icons
     DOM.refreshBtnIcon.innerHTML = ICONS.refresh;
+    DOM.exportCsvBtnIcon.innerHTML = ICONS.export;
     document.getElementById('search-icon-container').innerHTML = ICONS.search;
     DOM.modalCloseBtn.innerHTML = ICONS.close;
+    
+    // Theme Initial State Setup
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-theme');
+        DOM.themeToggleBtn.innerHTML = ICONS.moon;
+    } else {
+        DOM.themeToggleBtn.innerHTML = ICONS.sun;
+    }
     
     // Add Event Listeners
     DOM.refreshBtn.addEventListener('click', () => loadReleaseNotes(true));
     DOM.searchInput.addEventListener('input', handleSearchInput);
+    DOM.themeToggleBtn.addEventListener('click', toggleTheme);
+    DOM.exportCsvBtn.addEventListener('click', exportToCSV);
     
     DOM.filterTabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -114,6 +132,100 @@ function showToast(message, type = 'info') {
     }, 4000);
 }
 
+// Light/Dark Theme toggler
+function toggleTheme() {
+    if (document.body.classList.contains('light-theme')) {
+        document.body.classList.remove('light-theme');
+        DOM.themeToggleBtn.innerHTML = ICONS.sun;
+        localStorage.setItem('theme', 'dark');
+        showToast('Włączono motyw ciemny', 'info');
+    } else {
+        document.body.classList.add('light-theme');
+        DOM.themeToggleBtn.innerHTML = ICONS.moon;
+        localStorage.setItem('theme', 'light');
+        showToast('Włączono motyw jasny', 'info');
+    }
+}
+
+// Export Filtered Updates to CSV
+function exportToCSV() {
+    const query = appData.searchQuery;
+    const filter = appData.activeFilter;
+    
+    let csvRows = [];
+    // Headers
+    csvRows.push(['Date', 'Type/Category', 'Description', 'Link'].map(escapeCSV).join(','));
+    
+    let matchesCount = 0;
+    
+    appData.releases.forEach(dayGroup => {
+        dayGroup.updates.forEach(update => {
+            // Apply filtering logic
+            let typeMatch = false;
+            const uType = update.type.toLowerCase();
+            
+            if (filter === 'all') {
+                typeMatch = true;
+            } else if (filter === 'feature' && uType.includes('feature')) {
+                typeMatch = true;
+            } else if (filter === 'changed' && (uType.includes('change') || uType.includes('update'))) {
+                typeMatch = true;
+            } else if (filter === 'announcement' && uType.includes('announc')) {
+                typeMatch = true;
+            } else if (filter === 'issue' && (uType.includes('issue') || uType.includes('deprecat') || uType.includes('fix') || uType.includes('resolved'))) {
+                typeMatch = true;
+            }
+            
+            if (!typeMatch) return;
+            
+            if (query) {
+                const textMatch = update.text.toLowerCase().includes(query);
+                const titleMatch = dayGroup.date.toLowerCase().includes(query);
+                const tagMatch = update.type.toLowerCase().includes(query);
+                if (!textMatch && !titleMatch && !tagMatch) return;
+            }
+            
+            matchesCount++;
+            
+            // Format csv row
+            csvRows.push([
+                dayGroup.date,
+                update.type,
+                update.text.replace(/\r?\n|\r/g, ' '), // flatten text newlines
+                dayGroup.link
+            ].map(escapeCSV).join(','));
+        });
+    });
+    
+    if (matchesCount === 0) {
+        showToast('Brak pasujących danych do wyeksportowania!', 'error');
+        return;
+    }
+    
+    // Prepend UTF-8 BOM to make Excel render polish/special characters correctly
+    const csvContent = "\uFEFF" + csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `bigquery_release_notes_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showToast(`Wyeksportowano ${matchesCount} aktualizacji do CSV!`, 'success');
+}
+
+function escapeCSV(text) {
+    if (text === null || text === undefined) return '';
+    let formatted = text.toString().replace(/"/g, '""');
+    if (formatted.includes(',') || formatted.includes('\n') || formatted.includes('"')) {
+        formatted = `"${formatted}"`;
+    }
+    return formatted;
+}
+
 // Network Request: Load release notes
 async function loadReleaseNotes(forceRefresh = false) {
     setLoadingState(true);
@@ -128,14 +240,14 @@ async function loadReleaseNotes(forceRefresh = false) {
             appData.releases = result.releases;
             
             // Format status meta details
-            let sourceLabel = 'Synced';
+            let sourceLabel = 'Zsynchronizowano';
             if (result.source === 'cache') {
-                sourceLabel = 'Cached';
+                sourceLabel = 'Pamięć podręczna';
             } else if (result.source === 'network_fallback') {
-                sourceLabel = 'Network Fallback';
-                showToast('Failed to connect to Google feed. Using cached data.', 'error');
+                sourceLabel = 'Błąd sieci (Fallback)';
+                showToast('Nie można połączyć się z Google. Użyto kopii lokalnej.', 'error');
             } else {
-                showToast('Release notes fetched successfully!', 'success');
+                showToast('Pomyślnie zaktualizowano listę zmian!', 'success');
             }
             
             DOM.statusText.innerText = `${sourceLabel}: ${result.last_updated}`;
@@ -144,11 +256,11 @@ async function loadReleaseNotes(forceRefresh = false) {
             // Render content
             renderTimeline();
         } else {
-            throw new Error(result.message || 'Unknown server error');
+            throw new Error(result.message || 'Błąd serwera');
         }
     } catch (error) {
         console.error('Error fetching release notes:', error);
-        showToast(`Error: ${error.message || 'Could not fetch release notes.'}`, 'error');
+        showToast(`Błąd: ${error.message || 'Nie można pobrać danych.'}`, 'error');
         renderErrorState(error.message);
     } finally {
         setLoadingState(false);
@@ -162,14 +274,13 @@ function setLoadingState(isLoading) {
         DOM.refreshBtnIcon.innerHTML = ICONS.spinner;
         DOM.statusDot.classList.add('syncing');
         
-        // Show loading skeleton inside container
         DOM.timelineFeed.innerHTML = `
             <div class="loading-state">
                 <div style="display:inline-flex;justify-content:center;align-items:center;">
                     ${ICONS.spinner}
                 </div>
-                <h3 style="margin-top: 10px; font-weight: 500;">Fetching BigQuery release notes...</h3>
-                <p style="color: var(--text-secondary); font-size: 0.9rem;">Connecting to Google Cloud RSS feeds...</p>
+                <h3 style="margin-top: 10px; font-weight: 500;">Pobieranie aktualizacji BigQuery...</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Łączenie z kanałem RSS Google Cloud...</p>
             </div>
         `;
     } else {
@@ -185,10 +296,10 @@ function renderErrorState(errorMessage) {
             <div style="display:inline-flex;justify-content:center;align-items:center;color:var(--type-issue-color);">
                 ${ICONS.alert}
             </div>
-            <h3 style="margin-top:10px;">Failed to load release notes</h3>
-            <p>${errorMessage || 'Please check your connection and try again.'}</p>
+            <h3 style="margin-top:10px;">Nie udało się załadować danych</h3>
+            <p>${errorMessage || 'Sprawdź połączenie z siecią i spróbuj ponownie.'}</p>
             <button class="btn btn-primary" style="margin-top:20px;" onclick="loadReleaseNotes(true)">
-                ${ICONS.refresh} Try Again
+                ${ICONS.refresh} Spróbuj ponownie
             </button>
         </div>
     `;
@@ -273,7 +384,7 @@ function renderTimeline() {
                 cardEl.className = `update-card ${cardTypeClass} ${isSelected ? 'selected' : ''}`;
                 cardEl.id = cardId;
                 
-                // Store data details for Tweet composer
+                // Store data details for Tweet composer & Copy
                 cardEl.dataset.id = cardId;
                 cardEl.dataset.date = dayGroup.date;
                 cardEl.dataset.type = update.type;
@@ -285,10 +396,13 @@ function renderTimeline() {
                     <div class="card-meta">
                         <span class="type-badge ${update.type.toLowerCase().replace(/\s+/g, '-')}">${update.type}</span>
                         <div class="card-actions">
-                            <button class="card-btn btn-tweet-action" title="Tweet about this specific update" data-action="tweet-direct">
+                            <button class="card-btn" title="Kopiuj aktualizację do schowka" data-action="copy-card">
+                                ${ICONS.copy}
+                            </button>
+                            <button class="card-btn btn-tweet-action" title="Wyślij Tweet o tym wpisie" data-action="tweet-direct">
                                 ${ICONS.twitter}
                             </button>
-                            <a href="${dayGroup.link}" target="_blank" class="card-btn" title="View original release notes link" data-action="link">
+                            <a href="${dayGroup.link}" target="_blank" class="card-btn" title="Otwórz oryginalny link" data-action="link">
                                 ${ICONS.externalLink}
                             </a>
                         </div>
@@ -300,17 +414,32 @@ function renderTimeline() {
                 
                 // Event Delegation within Card
                 cardEl.addEventListener('click', (e) => {
-                    // Prevent select toggle if user clicks on links or button
                     const target = e.target;
                     const actionBtn = target.closest('.card-btn');
                     const isLink = target.tagName === 'A' || target.closest('a');
                     
-                    if (actionBtn && actionBtn.dataset.action === 'tweet-direct') {
+                    if (actionBtn) {
                         e.stopPropagation();
-                        // Open direct tweet composer with just this card
-                        clearSelection();
-                        toggleCardSelection(cardEl);
-                        openTweetComposer();
+                        
+                        const action = actionBtn.dataset.action;
+                        if (action === 'tweet-direct') {
+                            clearSelection();
+                            toggleCardSelection(cardEl);
+                            openTweetComposer();
+                        } else if (action === 'copy-card') {
+                            const date = cardEl.dataset.date;
+                            const type = cardEl.dataset.type;
+                            const plainText = cardEl.dataset.plainText;
+                            const link = cardEl.dataset.link;
+                            
+                            const copyText = `BigQuery Update (${date}) - [${type}]:\n${plainText}\n\nLink: ${link}`;
+                            navigator.clipboard.writeText(copyText)
+                                .then(() => showToast('Skopiowano treść aktualizacji do schowka!', 'success'))
+                                .catch(err => {
+                                    console.error('Copy error:', err);
+                                    showToast('Błąd kopiowania do schowka.', 'error');
+                                });
+                        }
                         return;
                     }
                     
@@ -337,10 +466,10 @@ function renderTimeline() {
                 <div style="display:inline-flex;justify-content:center;align-items:center;">
                     ${ICONS.search}
                 </div>
-                <h3 style="margin-top:10px;">No updates found</h3>
-                <p>We couldn't find any release notes matching your filters or search term "${query}".</p>
+                <h3 style="margin-top:10px;">Nie znaleziono aktualizacji</h3>
+                <p>Nie możemy znaleźć żadnych release notes pasujących do filtru lub frazy "${query}".</p>
                 <button class="btn" style="margin-top:16px;" onclick="clearFilters()">
-                    Reset Filters
+                    Resetuj filtry
                 </button>
             </div>
         `;
@@ -385,6 +514,7 @@ function toggleCardSelection(cardEl) {
     updateFloatingBar();
 }
 
+// Clear Selection
 function clearSelection() {
     appData.selectedIds.clear();
     document.querySelectorAll('.update-card.selected').forEach(card => {
@@ -396,7 +526,7 @@ function clearSelection() {
 function updateFloatingBar() {
     const count = appData.selectedIds.size;
     if (count > 0) {
-        DOM.selectedCountText.innerText = `${count} ${count === 1 ? 'update' : 'updates'} selected`;
+        DOM.selectedCountText.innerText = `${count} ${count === 1 ? 'aktualizacja zaznaczona' : 'aktualizacji zaznaczonych'}`;
         DOM.floatingBar.classList.add('active');
     } else {
         DOM.floatingBar.classList.remove('active');
@@ -430,16 +560,11 @@ function generateTweetDraft(selectedCards) {
         const text = card.dataset.plainText;
         const link = card.dataset.link;
         
-        // Condense text spaces and clean HTML scraps
         let cleanText = text.replace(/\s+/g, ' ').trim();
         
-        // Calculate max description length for Twitter 280-char limit
-        // Intro: "BigQuery Update ([date]) - [type]:\n" (varies, ~35-45 chars)
-        // Outro: "\n\nDetails: [link]\n#BigQuery" (varies, ~80 chars)
-        // Leaving approx ~150 chars for description
         const templateStructure = `BigQuery Update (${date}) - [${type}]:\n\n\n\nDetails: ${link}\n#BigQuery #GoogleCloud`;
         const reservedLen = templateStructure.length;
-        const allowedDescLen = Math.max(100, 280 - reservedLen - 5); // safety margin
+        const allowedDescLen = Math.max(100, 280 - reservedLen - 5);
         
         if (cleanText.length > allowedDescLen) {
             cleanText = cleanText.substring(0, allowedDescLen - 3) + '...';
@@ -449,7 +574,7 @@ function generateTweetDraft(selectedCards) {
     } else {
         // Multi-select summaries
         let draft = `BigQuery Updates:\n`;
-        const link = selectedCards[0].dataset.link.split('#')[0]; // Root release page link
+        const link = selectedCards[0].dataset.link.split('#')[0];
         
         selectedCards.forEach(card => {
             let cleanText = card.dataset.plainText.replace(/\s+/g, ' ').trim();
@@ -459,8 +584,6 @@ function generateTweetDraft(selectedCards) {
             draft += `• [${card.dataset.type}] ${cleanText}\n`;
         });
         
-        const reservedLen = draft.length + `\nRelease Notes: \n#BigQuery #GoogleCloud`.length;
-        // Check if overall text fits, else truncate the list items
         if (draft.length > 180) {
             draft = draft.substring(0, 175) + '...\n';
         }
@@ -494,7 +617,6 @@ function updateCharCounter() {
     
     DOM.charCounter.innerText = `${count} / ${limit}`;
     
-    // Manage CSS classes on indicator based on limit bounds
     DOM.charCounterWrapper.classList.remove('warning', 'danger');
     if (count > limit) {
         DOM.charCounterWrapper.classList.add('danger');
@@ -508,7 +630,7 @@ function updateCharCounter() {
     
     // Animate Circular Progress Ring
     const radius = 9;
-    const circumference = 2 * Math.PI * radius; // ~56.54
+    const circumference = 2 * Math.PI * radius;
     DOM.progressRing.style.strokeDasharray = `${circumference} ${circumference}`;
     
     const percentage = Math.min(100, (count / limit) * 100);
@@ -519,26 +641,25 @@ function updateCharCounter() {
 function submitTweet() {
     const text = DOM.tweetTextarea.value;
     if (text.length > 280) {
-        showToast('Tweet text exceeds the 280 character limit!', 'error');
+        showToast('Treść tweeta przekracza limit 280 znaków!', 'error');
         return;
     }
     
-    // Open Twitter Web Intent in new window
     const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
     window.open(intentUrl, '_blank', 'width=550,height=420,referrerpolicy=no-referrer');
     
     closeTweetComposer();
     clearSelection();
-    showToast('Redirected to Twitter/X compose web intent!', 'success');
+    showToast('Przekierowano do edytora Twitter/X!', 'success');
 }
 
 async function copyTweetToClipboard() {
     const text = DOM.tweetTextarea.value;
     try {
         await navigator.clipboard.writeText(text);
-        showToast('Copied draft tweet to clipboard!', 'success');
+        showToast('Skopiowano szkic tweeta do schowka!', 'success');
     } catch (err) {
         console.error('Failed to copy text:', err);
-        showToast('Failed to copy to clipboard.', 'error');
+        showToast('Błąd podczas kopiowania do schowka.', 'error');
     }
 }

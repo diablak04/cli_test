@@ -47,6 +47,88 @@
     --radius-full: 9999px;
 }
 
+/* Light Theme Variables */
+body.light-theme {
+    --bg-dark: #f3f5f9;
+    --bg-radial: radial-gradient(circle at 50% 0%, #e2e8f0 0%, #f3f5f9 100%);
+    --panel-bg: rgba(255, 255, 255, 0.7);
+    --panel-border: rgba(0, 0, 0, 0.08);
+    --panel-shadow: 0 8px 32px 0 rgba(148, 163, 184, 0.1);
+    
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
+    
+    --color-primary-glow: rgba(14, 165, 233, 0.12);
+    --color-accent-glow: rgba(124, 58, 237, 0.12);
+    
+    --type-feature-bg: rgba(16, 185, 129, 0.08);
+    --type-announcement-bg: rgba(139, 92, 246, 0.08);
+    --type-changed-bg: rgba(59, 130, 246, 0.08);
+    --type-deprecation-bg: rgba(245, 158, 11, 0.08);
+    --type-issue-bg: rgba(239, 68, 68, 0.08);
+    
+    --type-default-bg: rgba(107, 114, 128, 0.08);
+}
+
+/* Light Theme Specific Adjustments */
+body.light-theme .search-input {
+    background-color: rgba(255, 255, 255, 0.85);
+    color: var(--text-primary);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+body.light-theme .search-input:focus {
+    background-color: #ffffff;
+    border-color: #0284c7;
+}
+body.light-theme .tweet-composer {
+    background-color: rgba(255, 255, 255, 0.85);
+    color: var(--text-primary);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+body.light-theme .tweet-composer:focus {
+    background-color: #ffffff;
+}
+body.light-theme .card-content code {
+    background-color: rgba(15, 23, 42, 0.05);
+    color: #be185d;
+    border-color: rgba(15, 23, 42, 0.03);
+}
+body.light-theme .update-card.selected::before {
+    border-color: transparent var(--color-primary) transparent transparent;
+}
+body.light-theme .update-card.selected .select-indicator {
+    color: #ffffff;
+}
+body.light-theme .bg-glow-1, body.light-theme .bg-glow-2 {
+    opacity: 0.06;
+}
+body.light-theme .toast {
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+    color: var(--text-primary);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+body.light-theme .modal-dialog {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15);
+}
+body.light-theme .status-badge {
+    background: rgba(0, 0, 0, 0.02);
+}
+body.light-theme .filter-tab {
+    background: rgba(0, 0, 0, 0.02);
+}
+body.light-theme .filter-tab:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+body.light-theme .floating-bar {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: var(--color-primary);
+    box-shadow: 0 10px 40px -10px rgba(14, 165, 233, 0.2);
+}
+
 /* Reset and Global Styles */
 * {
     box-sizing: border-box;
