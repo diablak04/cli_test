@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Notes Hub</title>
+    
+    <!-- Premium Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS Link -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Premium background glowing gradients -->
+    <div class="bg-glow-1"></div>
+    <div class="bg-glow-2"></div>
+
+    <div class="container">
+        <!-- App Header Section -->
+        <header class="app-header">
+            <div class="app-title-container">
+                <!-- Custom BigQuery / Data Hub Styled SVG Logo -->
+                <svg class="app-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+                <h1 class="app-title">BigQuery Release Hub</h1>
+            </div>
+            <p class="app-subtitle">Track, filter, and compose social announcements for the latest BigQuery features, deprecations, and service updates.</p>
+            
+            <div class="meta-controls">
+                <div class="status-badge">
+                    <span class="status-dot" id="status-dot"></span>
+                    <span id="status-text">Checking feed...</span>
+                </div>
+                <button class="btn" id="refresh-btn">
+                    <span id="refresh-btn-icon"></span>
+                    <span id="refresh-btn-text">Refresh Feed</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Search & Filter Controls -->
+        <div class="toolbar">
+            <div class="search-wrapper">
+                <div class="search-icon" id="search-icon-container"></div>
+                <input type="text" class="search-input" id="search-input" placeholder="Search update descriptions, dates, or types...">
+            </div>
+            
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-type="all">All Updates</button>
+                <button class="filter-tab" data-type="feature">Features</button>
+                <button class="filter-tab" data-type="changed">Changes</button>
+                <button class="filter-tab" data-type="announcement">Announcements</button>
+                <button class="filter-tab" data-type="issue">Issues & Deprecations</button>
+            </div>
+        </div>
+
+        <!-- Release Notes Timeline Stream -->
+        <main class="timeline" id="timeline-feed">
+            <!-- Dynamically loaded timeline items will be rendered here -->
+        </main>
+    </div>
+
+    <!-- Floating Selection Action Bar -->
+    <div class="floating-bar" id="floating-bar">
+        <div class="floating-bar-info">
+            <div class="floating-bar-title" id="selected-count-text">0 updates selected</div>
+            <div class="floating-bar-desc">Combine items to compose a compiled social post</div>
+        </div>
+        <div class="floating-bar-actions">
+            <button class="btn" id="action-clear-btn">Clear</button>
+            <button class="btn btn-primary" id="action-draft-btn">Draft Tweet</button>
+        </div>
+    </div>
+
+    <!-- Tweet Draft Composer Modal -->
+    <div class="modal-overlay" id="tweet-modal">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <!-- Standard X (Twitter) Brand Logo -->
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                    Compose Announcement
+                </h3>
+                <button class="modal-close" id="modal-close-btn"></button>
+            </div>
+            <div class="modal-body">
+                <p>Customize your announcement before sharing it to X (Twitter). Ensure it stays within character limits.</p>
+                
+                <textarea class="tweet-composer" id="tweet-textarea" placeholder="What's happening?"></textarea>
+                
+                <div class="composer-meta">
+                    <!-- Circular character progression ring -->
+                    <div class="char-counter-wrapper" id="char-counter-wrapper">
+                        <svg class="progress-ring">
+                            <circle class="progress-ring-circle-bg" cx="10" cy="10" r="9"/>
+                            <circle class="progress-ring-circle" id="progress-ring-circle" cx="10" cy="10" r="9"/>
+                        </svg>
+                        <span id="char-counter">0 / 280</span>
+                    </div>
+                    
+                    <button class="btn" id="copy-tweet-btn" title="Copy text to clipboard">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;margin-right:4px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        Copy Draft
+                    </button>
+                </div>
+                
+                <div class="modal-footer">
+                    <button class="btn" id="cancel-tweet-btn">Cancel</button>
+                    <button class="btn btn-primary" id="share-tweet-btn">
+                        Post to X
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Application Logic Link -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
